@@ -8,10 +8,18 @@ public class Stringx {
         char[] chars = str.toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
 
-        return new String(str);
+        return new String(chars);
+    }
+
+    public static String toUpperCaseWords (String str, String split, String join) {
+        return Arrays.stream(str.split(split)).map(Stringx::toUpperCaseFirst).collect(Collectors.joining(join));
+    }
+
+    public static String toUpperCaseWords (String str, String split) {
+        return toUpperCaseWords(str, split, split);
     }
 
     public static String toUpperCaseWords (String str) {
-        return Arrays.stream(str.split(" ")).map(Stringx::toUpperCaseFirst).collect(Collectors.joining(" "));
+        return toUpperCaseWords(str, " ");
     }
 }

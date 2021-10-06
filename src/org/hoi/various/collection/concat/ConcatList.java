@@ -2,9 +2,7 @@ package org.hoi.various.collection.concat;
 
 import org.hoi.various.collection.MappedList;
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.Spliterator;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class ConcatList<T> extends AbstractList<T> {
@@ -39,5 +37,17 @@ public class ConcatList<T> extends AbstractList<T> {
     @Override
     public boolean add(T t) {
         return last.add(t);
+    }
+
+    // STATIC
+    public static <A extends Collection<B>, B extends List<T>, T> ConcatList<T> of (A values) {
+        Iterator<B> iter = values.iterator();
+        ConcatList<T> list = new ConcatList<T>(iter.next(), iter.next());
+
+        while (iter.hasNext()) {
+            list = new ConcatList<>(list, iter.next());
+        }
+
+        return list;
     }
 }

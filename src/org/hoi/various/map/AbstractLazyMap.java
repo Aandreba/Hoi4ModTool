@@ -9,7 +9,11 @@ import java.util.stream.Stream;
 
 public abstract class AbstractLazyMap<K,V> implements LazyMap<K,V> {
     public abstract Collection<Map.Entry<K,V>> entries ();
-    public abstract int size ();
+
+    @Override
+    public int size () {
+        return entries().size();
+    }
 
     @Override
     public boolean isEmpty() {

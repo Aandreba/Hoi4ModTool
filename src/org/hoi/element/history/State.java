@@ -9,10 +9,12 @@ import org.hoi.various.collection.MappedList;
 import org.hoi.various.collection.readonly.ReadOnlyList;
 import org.hoi.various.collection.readonly.ReadOnlyMap;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.*;
+import java.util.List;
 
 public class State extends HoiMap {
     private static ReadOnlyList<State> DEFAULTS;
@@ -25,33 +27,42 @@ public class State extends HoiMap {
         super(reader);
     }
 
+    public State (HoiMap other) {
+        super(other);
+    }
+
     // PROPERTIES
-    private HoiMap getMap () {
-        return this.getFirstAs("state");
+    final public int getId () {
+        return this.getFirstInteger("id");
     }
 
-    public int getId () {
-        return getMap().getFirstInteger("id");
+    final public int getManpower () {
+        return this.getFirstInteger("manpower");
     }
 
-    public int getManpower () {
-        return getMap().getFirstInteger("manpower");
+    final public String getCategory () {
+        return this.getFirstString("state_category");
     }
 
-    public float getBuildingsMaxLevelFactor () {
-        return getMap().getFirstFloatOrElse("buildings_max_level_factor", 1f);
+    final public Category getCategory (Collection<Category> options) {
+        String category = getCategory();
+        return options.stream().filter(x -> x.getName().equals(category)).findFirst().orElse(null);
     }
 
-    public boolean isImpassable () {
-        return getMap().getFirstBoolOrElse("impassable", false);
+    final public float getBuildingsMaxLevelFactor () {
+        return this.getFirstFloatOrElse("buildings_max_level_factor", 1f);
     }
 
-    public List<Integer> getProvinces () {
-        return getMap().getAs("provinces");
+    final public boolean isImpassable () {
+        return this.getFirstBoolOrElse("impassable", false);
     }
 
-    public List<Province> getProvinces (Map<Integer, Province> provinces) {
-        return new MappedList<>(getMap().get("provinces")) {
+    final public List<Integer> getProvinces () {
+        return this.getAs("provinces");
+    }
+
+    final public List<Province> getProvinces (Map<Integer, Province> provinces) {
+        return new MappedList<>(this.get("provinces")) {
             @Override
             protected Province map (Object input) {
                 return provinces.get(input);
@@ -59,7 +70,7 @@ public class State extends HoiMap {
         };
     }
 
-    public History getHistory () {
+    final public History getHistory () {
         return new History();
     }
 
@@ -80,52 +91,81 @@ public class State extends HoiMap {
         return DEFAULTS;
     }
 
+    public static void loadAllDefaults () throws IOException {
+        loadDefaults();
+        Category.loadDefaults();
+    }
+
     public static void loadDefaults () throws IOException {
         File[] files = HoiLoader.getFile("/history/states").listFiles();
         ArrayList<State> states = new ArrayList<>();
 
         for (File file: files) {
-            states.add(new State(file));
+            HoiMap map = new HoiMap(file).getFirstAs("state");
+            states.add(new State(map));
         }
 
         DEFAULTS = new ReadOnlyList<State>(states);
     }
 
-    public class History {
+    public class History extends HoiMap {
         final public State parent;
 
         public History () {
+            super(State.this.getFirstAs(HoiMap.class, "history"));
             this.parent = State.this;
         }
 
-        private HoiMap getMap () {
-            return State.this.getMap().getFirstAs("history");
+        final public String getOwner () {
+            return this.getFirstAs(HoiTag.class, "owner").toString();
         }
 
-        public String getOwner () {
-            return getMap().getFirstAs(HoiTag.class, "owner").toString();
+        final public Country getOwner (Collection<Country> options) {
+            String owner = getOwner();
+            return options.stream().filter(x -> x.getTag().equals(owner)).findFirst().orElse(null);
         }
 
-        public String getController () {
-            HoiMap map = getMap();
-
+        final public String getController () {
             try {
-                return map.getFirstAs(HoiTag.class, "controller").toString();
+                return this.getFirstAs(HoiTag.class, "controller").toString();
             } catch (Exception ignore) {}
 
-            return map.getFirstAs(HoiTag.class, "owner").toString();
+            return this.getFirstAs(HoiTag.class, "owner").toString();
         }
 
-        public List<String> coreOf () {
-            return getMap().getString("add_core_off");
+        final public Country getController (Collection<Country> options) {
+            String owner = getController();
+            return options.stream().filter(x -> x.getTag().equals(owner)).findFirst().orElse(null);
         }
 
-        public List<String> claimedBy () {
-            return getMap().getString("add_core_off");
+        final public List<String> coreOf () {
+            return this.getString("add_core_of");
         }
 
-        public Map<Integer, Integer> getVictoryPoints () {
-            List<Integer> list = new MappedList<>(getMap().getFirstAs(HoiList.class, "victory_points")) {
+        final public List<Country> coreOf (Collection<Country> options) {
+            return new MappedList<>(coreOf()) {
+                @Override
+                protected Country map (String input) {
+                    return options.stream().filter(x -> x.getTag().equals(input)).findFirst().orElse(null);
+                }
+            };
+        }
+
+        final public List<String> claimedBy () {
+            return this.getString("add_claim_by");
+        }
+
+        final public List<Country> claimedBy (Collection<Country> options) {
+            return new MappedList<>(claimedBy()) {
+                @Override
+                protected Country map (String input) {
+                    return options.stream().filter(x -> x.getTag().equals(input)).findFirst().orElse(null);
+                }
+            };
+        }
+
+        final public Map<Integer, Integer> getVictoryPoints () {
+            List<Integer> list = new MappedList<>(this.getFirstAs(HoiList.class, "victory_points")) {
                 @Override
                 protected Integer map (Object input) {
                     return ((Number) input).intValue();
@@ -151,6 +191,56 @@ public class State extends HoiMap {
                     "claimedBy=" + claimedBy() + ", " +
                     "victoryPoints=" + getVictoryPoints() +
                     '}';
+        }
+    }
+
+    public static class Category extends HoiMap {
+        private static ReadOnlyList<Category> DEFAULTS;
+
+        private String name;
+
+        public Category (HoiMap other, String name) {
+            super(other);
+            this.name = name;
+        }
+
+        public Category (File file, String name) throws IOException {
+            super(file);
+            this.name = name;
+        }
+
+        public Category (Reader reader, String name) throws IOException {
+            super(reader);
+            this.name = name;
+        }
+
+        public String getName () {
+            return name;
+        }
+
+        public int getBuildingSlots () {
+            return this.getFirstInteger("local_building_slots");
+        }
+
+        public Color getColor () {
+            return this.getFirstColor("color");
+        }
+
+        // STATIC
+        public static void loadDefaults () throws IOException {
+            File dir = HoiLoader.getFile("common/state_category");
+            File[] files = dir.listFiles();
+
+            ArrayList<Category> categories = new ArrayList<>();
+            for (File file: files) {
+                HoiMap map = new HoiMap(file).getFirstAs("state_categories");
+
+                for (Map.Entry<String, Object> entry: map) {
+                    categories.add(new Category((HoiMap) entry.getValue(), entry.getKey()));
+                }
+            }
+
+            DEFAULTS = new ReadOnlyList<Category>(categories);
         }
     }
 }

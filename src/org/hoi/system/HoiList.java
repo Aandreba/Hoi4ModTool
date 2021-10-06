@@ -28,12 +28,12 @@ public class HoiList extends ArrayList<Object> {
     }
 
     public boolean getBool (int pos) {
-        return getAs(HoiTag.class, pos).toString().equals("yes");
+        return getAs(pos);
     }
 
     public boolean getBoolOrElse (int pos, boolean other) {
         try {
-            return getAs(HoiTag.class, pos).toString().equals("yes");
+            return getAs(pos);
         } catch (Exception e) {
             return other;
         }

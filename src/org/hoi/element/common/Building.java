@@ -14,34 +14,41 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class Building extends HoiMap {
-    public Building (File file) throws IOException {
-        super (file);
+public class Building extends HoiMap {
+    protected String name;
+
+    public Building(HoiMap other, String name) {
+        super(other);
+        this.name = name;
     }
 
-    public Building (Reader reader) throws IOException {
+    public Building(File file, String name) throws IOException {
+        super(file);
+        this.name = name;
+    }
+
+    public Building(Reader reader, String name) throws IOException {
         super(reader);
+        this.name = name;
     }
 
-    public Building (HoiMap map) {
-        super(map);
+    public String getName () {
+        return name;
     }
 
-    public abstract String getName ();
-
-    public abstract static class OfState extends Building {
+    public static class OfState extends Building {
         private static ReadOnlyList<OfState> DEFAULTS;
 
-        public OfState (File file) throws IOException {
-            super(file);
+        public OfState(HoiMap other, String name) {
+            super(other, name);
         }
 
-        public OfState (Reader reader) throws IOException {
-            super(reader);
+        public OfState(File file, String name) throws IOException {
+            super(file, name);
         }
 
-        public OfState (HoiMap map) {
-            super(map);
+        public OfState(Reader reader, String name) throws IOException {
+            super(reader, name);
         }
 
         public boolean isShared () {
@@ -54,19 +61,19 @@ public abstract class Building extends HoiMap {
         }
     }
 
-    public abstract static class OfProvince extends Building {
+    public static class OfProvince extends Building {
         private static ReadOnlyList<OfProvince> DEFAULTS;
 
-        public OfProvince (File file) throws IOException {
-            super(file);
+        public OfProvince(HoiMap other, String name) {
+            super(other, name);
         }
 
-        public OfProvince (Reader reader) throws IOException {
-            super(reader);
+        public OfProvince(File file, String name) throws IOException {
+            super(file, name);
         }
 
-        public OfProvince (HoiMap map) {
-            super(map);
+        public OfProvince(Reader reader, String name) throws IOException {
+            super(reader, name);
         }
 
         public boolean isCoastal () {
@@ -92,19 +99,9 @@ public abstract class Building extends HoiMap {
             boolean province = data.getFirstBoolOrElse("provincial", false);
 
             if (province) {
-                provinces.add(new OfProvince(data) {
-                    @Override
-                    public String getName() {
-                        return entry.getKey();
-                    }
-                });
+                provinces.add(new OfProvince(data, entry.getKey()));
             } else {
-                states.add(new OfState(data) {
-                    @Override
-                    public String getName() {
-                        return entry.getKey();
-                    }
-                });
+                states.add(new OfState(data, entry.getKey()));
             }
         }
 

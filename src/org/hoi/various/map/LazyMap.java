@@ -56,6 +56,15 @@ public interface LazyMap<K,V> extends Iterable<Map.Entry<K,V>> {
         return removeFirst(key, x -> true);
     }
 
+    default Map<K,V> toMap () {
+        return new AbstractMap<K, V>() {
+            @Override
+            public Set<Entry<K, V>> entrySet() {
+                return new HashSet<>(entries());
+            }
+        };
+    }
+
     default void forEach (BiConsumer<K,V> action) {
         Objects.requireNonNull(action);
         for (Map.Entry<K, V> entry : entries()) {

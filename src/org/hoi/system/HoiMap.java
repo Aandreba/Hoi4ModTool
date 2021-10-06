@@ -4,8 +4,10 @@ import org.hoi.various.collection.MappedList;
 import org.hoi.various.map.AbstractLazyMap;
 import org.hoi.various.map.LazyMap;
 
+import java.awt.*;
 import java.io.*;
 import java.util.*;
+import java.util.List;
 
 public class HoiMap extends AbstractLazyMap<String, Object> {
     final private ArrayList<Map.Entry<String, Object>> entries;
@@ -63,11 +65,6 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         return entries;
     }
 
-    @Override
-    public int size() {
-        return entries.size();
-    }
-
     public <T> List<T> getAs (String key) {
         return new MappedList<>(get(key)) {
             @Override
@@ -110,7 +107,7 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         return new MappedList<>(get(key)) {
             @Override
             protected Boolean map (Object input) {
-                return input.toString().equals("yes");
+                return (Boolean) input;
             }
         };
     }
@@ -133,17 +130,31 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         };
     }
 
+    public List<Color> getColor (String key) {
+        return new MappedList<>(get(key)) {
+            @Override
+            protected Color map (Object input) {
+                if (input instanceof Color) {
+                    return (Color) input;
+                }
+
+                HoiList list = (HoiList) input;
+                return new Color(list.getInteger(0), list.getInteger(1), list.getInteger(2));
+            }
+        };
+    }
+
     public String getFirstString (String key) {
         return getFirst(key).toString();
     }
 
     public boolean getFirstBool (String key) {
-        return getFirstAs(HoiTag.class, key).toString().equals("yes");
+        return getFirstAs(key);
     }
 
     public boolean getFirstBoolOrElse (String key, boolean other) {
         try {
-            return getFirstAs(HoiTag.class, key).toString().equals("yes");
+            return getFirstAs(key);
         } catch (Exception e) {
             return other;
         }
@@ -171,6 +182,24 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         } catch (Exception e) {
             return other;
         }
+    }
+
+    public Color getFirstColor (String key) {
+        Object input = getFirst(key);
+        if (input instanceof Color) {
+            return (Color) input;
+        }
+
+        HoiList list = (HoiList) input;
+        return new Color(list.getInteger(0), list.getInteger(1), list.getInteger(2));
+    }
+
+    public Color getFirstColorOrElse (String key, Color other) {
+        try {
+            return getFirstColor(key);
+        } catch (Exception ignore) {}
+
+        return other;
     }
 
     @Override
@@ -207,7 +236,11 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
     }
 
     private static Object decideValue (Reader reader, char first) throws IOException {
-        if (Character.isDigit(first)) {
+        while (first == '\n' || first == '\r' || first == '\t' || first == ' ') {
+            first = (char) reader.read();
+        }
+
+        if (Character.isDigit(first) || first == '-') {
             return integerValue(reader, first);
         } else if (first == '"') {
             return stringValue(reader);
@@ -229,7 +262,16 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             }
         }
 
-        return tagValue(reader, first);
+        Object tag = tagValue(reader, first);
+        if (tag instanceof HoiTag && tag.toString().equals("rgb")) {
+            HoiList next = ((HoiList) collectionValue(reader)).getAs(0);
+            return new Color(next.getInteger(0), next.getInteger(1), next.getInteger(2));
+        } else if (tag instanceof HoiTag && tag.toString().equalsIgnoreCase("hsv")) {
+            HoiList next = ((HoiList) collectionValue(reader)).getAs(0);
+            return Color.getHSBColor(next.getFloat(0), next.getFloat(1), next.getFloat(2));
+        }
+
+        return tag;
     }
 
     private static Object collectionValue (Reader reader) throws IOException {
@@ -249,10 +291,13 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             Object value = decideValue(reader, c);
             if (value instanceof HoiTag && value.toString().contains("=")) {
                 String[] split = value.toString().split("=");
-                HoiMap map = new HoiMap(reader, null, true);
+                if (split.length >= 2) {
+                    HoiMap map = new HoiMap(reader, null, true);
+                    map.add(split[0], parseValue(split[1]));
+                    return map;
+                }
 
-                map.add(split[0], parseValue(split[1]));
-                return map;
+                return new HoiMap(reader, split[0], true);
             }
 
             list.add(value);
@@ -277,7 +322,7 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         return builder.toString();
     }
 
-    private static HoiTag tagValue(Reader reader, char first) throws IOException {
+    private static Object tagValue(Reader reader, char first) throws IOException {
         StringBuilder builder = new StringBuilder().append(first);
         int read;
         while ((read = reader.read()) != -1) {
@@ -289,16 +334,18 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             builder.append(c);
         }
 
-        return new HoiTag(builder.toString());
+        String str = builder.toString();
+        return str.equals("yes") ? Boolean.TRUE : (str.equals("no") ? Boolean.FALSE : new HoiTag(str));
     }
 
-    private static Number integerValue(Reader reader, char first) throws IOException {
-        int integer = first - 48;
+    private static Number integerValue (Reader reader, char first) throws IOException {
+        boolean isNeg = first == '-';
+        int integer = isNeg ? 0 : first - 48;
 
         int read;
         while ((read = reader.read()) != -1) {
             if (read == 46) {
-                return floatValue(reader, integer);
+                return floatValue(reader, integer, isNeg);
             } else if (read < 48 || read > 57) {
                 break;
             }
@@ -307,10 +354,10 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             integer += read - 48;
         }
 
-        return integer;
+        return isNeg ? -integer : integer;
     }
 
-    private static float floatValue(Reader reader, int integer) throws IOException {
+    private static float floatValue(Reader reader, int integer, boolean isNeg) throws IOException {
         float value = integer;
         int i = 10;
 
@@ -324,13 +371,13 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             i *= 10f;
         }
 
-        return value;
+        return isNeg ? -value : value;
     }
 
     private static Object parseValue (String value) throws IOException {
         char first = value.charAt(0);
 
-        if (Character.isDigit(first)) {
+        if (Character.isDigit(first) || first == '-') {
             try {
                 return Integer.parseInt(value);
             } catch (Exception e) {
@@ -342,6 +389,6 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             return collectionValue(new StringReader(value));
         }
 
-        return new HoiTag(value);
+        return value.equals("yes") ? Boolean.TRUE : (value.equals("no") ? Boolean.FALSE : new HoiTag(value));
     }
 }

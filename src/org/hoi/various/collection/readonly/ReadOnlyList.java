@@ -121,13 +121,13 @@ public class ReadOnlyList<T> implements List<T> {
     }
 
     @Override
-    public ROLI listIterator() {
-        return new ROLI();
+    public ReadOnlyListIterator listIterator() {
+        return new ReadOnlyListIterator();
     }
 
     @Override
-    public ROLI listIterator(int index) {
-        return new ROLI(index);
+    public ReadOnlyListIterator listIterator(int index) {
+        return new ReadOnlyListIterator(index);
     }
 
     @Override
@@ -175,14 +175,14 @@ public class ReadOnlyList<T> implements List<T> {
         list.forEach(action);
     }
 
-    public class ROLI implements ListIterator<T> {
+    public class ReadOnlyListIterator implements ListIterator<T> {
         ListIterator<T> iter;
 
-        public ROLI() {
+        public ReadOnlyListIterator() {
             this.iter = ReadOnlyList.this.listIterator();
         }
 
-        public ROLI(int index) {
+        public ReadOnlyListIterator(int index) {
             this.iter = ReadOnlyList.this.listIterator(index);
         }
 

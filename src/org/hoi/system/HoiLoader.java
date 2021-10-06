@@ -1,6 +1,9 @@
 package org.hoi.system;
 
+import org.hoi.element.common.Autonomy;
 import org.hoi.element.common.Building;
+import org.hoi.element.common.Idea;
+import org.hoi.element.common.Ideology;
 import org.hoi.element.history.Country;
 import org.hoi.element.history.State;
 import org.hoi.element.map.Province;
@@ -34,11 +37,14 @@ public class HoiLoader {
     }
 
     public static void loadEffects () throws IOException, ParseException {
-        EffectsLoader.load(getFile("/documentation/script_documentation.json"));
+        EffectsLoader.loadDefaults();
     }
 
     public static void loadCommon () throws IOException {
+        Autonomy.loadDefaults();
         Building.loadDefaults();
+        Ideology.loadDefaults();
+        Idea.loadAllDefaults();
     }
 
     public static void loadMap () throws IOException {
@@ -46,7 +52,7 @@ public class HoiLoader {
     }
 
     public static void loadHistory () throws IOException {
-        State.loadDefaults();
         Country.loadDefaults();
+        State.loadAllDefaults();
     }
 }

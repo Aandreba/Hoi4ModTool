@@ -1,5 +1,7 @@
 package org.hoi.system.effects.types;
 
+import org.hoi.system.HoiList;
+import org.hoi.system.HoiLoader;
 import org.hoi.various.collection.readonly.ReadOnlyList;
 import org.hoi.system.effects.Scope;
 import org.hoi.system.effects.Target;
@@ -16,7 +18,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class EffectsLoader {
-    public static void load (File file) throws IOException, ParseException {
+    public static void loadDefaults () throws IOException, ParseException {
+        File file = HoiLoader.getFile("documentation/script_documentation.json");
         ObjectReader reader = new ObjectReader(Files.readString(file.toPath()));
 
         // TRIGGERS
