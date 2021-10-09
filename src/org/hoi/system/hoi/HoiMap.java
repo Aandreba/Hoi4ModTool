@@ -1,6 +1,6 @@
-package org.hoi.system;
+package org.hoi.system.hoi;
 
-import org.hoi.various.collection.MappedList;
+import org.hoi.various.collection.map.MappedList;
 import org.hoi.various.map.AbstractLazyMap;
 import org.hoi.various.map.LazyMap;
 
@@ -17,7 +17,11 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
     }
 
     public HoiMap (HoiMap other) {
-        this.entries = other.entries;
+        if (other == null) {
+            this.entries = new ArrayList<>();
+        } else {
+            this.entries = other.entries;
+        }
     }
 
     public HoiMap (File file) throws IOException {
@@ -30,32 +34,36 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
 
     private HoiMap (Reader reader, String firstKey, boolean separated) throws IOException {
         this();
+        boolean firstIsNull = firstKey == null;
 
-        if (firstKey != null && !firstKey.startsWith("#")) {
+        if (!firstIsNull && firstKey.startsWith("}") && separated) {
+            return;
+        } else if (!firstIsNull && !firstKey.startsWith("#")) {
             this.add(firstKey, getValue(reader));
         }
 
         int read;
         StringBuilder builder = new StringBuilder();
-        boolean commentStarted = false;
 
         while ((read = reader.read()) != -1) {
             char c = (char) read;
 
             if (c == '#') {
-                commentStarted = true;
-            } else if (commentStarted) {
-                commentStarted = c != '\n' && c != '\r';
-            } else {
-                if (c == '}' && separated) {
-                    break;
-                } else if (c == '=') {
-                    Object value = getValue(reader);
-                    this.add(builder.toString(), value);
-                    builder = new StringBuilder();
-                } else if (c != '\n' && c != '\r' && c != '\t' && c != ' ') {
-                    builder.append(c);
+                int readComment;
+                while ((readComment = reader.read()) != -1) {
+                    char cc = (char) readComment;
+                    if (cc == '\n' || cc == '\r') {
+                        break;
+                    }
                 }
+            } else if (c == '}' && separated) {
+                break;
+            } else if (c == '=') {
+                Object value = getValue(reader);
+                this.add(builder.toString(), value);
+                builder = new StringBuilder();
+            } else if (c > 32 && c != '\uFEFF') {
+                builder.append(c);
             }
         }
     }
@@ -145,7 +153,8 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
     }
 
     public String getFirstString (String key) {
-        return getFirst(key).toString();
+        Object first = getFirst(key);
+        return first == null ? null : first.toString();
     }
 
     public boolean getFirstBool (String key) {
@@ -224,19 +233,18 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
     private static Object getValue (Reader reader) throws IOException {
         int read;
         while ((read = reader.read()) != -1) {
-            char c = (char) read;
-            if (c == '\n' || c == '\t' || c == ' ') {
+            if (read <= 32) {
                 continue;
             }
 
-            return decideValue(reader, c);
+            return decideValue(reader, (char) read);
         }
 
         return null;
     }
 
     private static Object decideValue (Reader reader, char first) throws IOException {
-        while (first == '\n' || first == '\r' || first == '\t' || first == ' ') {
+        while (first <= 32) {
             first = (char) reader.read();
         }
 
@@ -280,7 +288,7 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         int read;
         while ((read = reader.read()) != -1) {
             char c = (char) read;
-            if (c == '\n' || c == '\r' || c == '\t' || c == ' ') {
+            if (c <= 32) {
                 continue;
             } else if (c == '}') {
                 break;
@@ -289,6 +297,10 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
             }
 
             Object value = decideValue(reader, c);
+            if (value instanceof HoiTag && value.toString().equals("}")) {
+                break;
+            }
+
             if (value instanceof HoiTag && value.toString().contains("=")) {
                 String[] split = value.toString().split("=");
                 if (split.length >= 2) {
@@ -327,7 +339,7 @@ public class HoiMap extends AbstractLazyMap<String, Object> {
         int read;
         while ((read = reader.read()) != -1) {
             char c = (char) read;
-            if (c == '\n' || c == '\r' || c == '\t' || c == ' ') {
+            if (c <= 32) {
                 break;
             }
 

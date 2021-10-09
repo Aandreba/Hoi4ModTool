@@ -1,9 +1,9 @@
 package org.hoi.element.common;
 
-import org.hoi.system.HoiList;
-import org.hoi.system.HoiLoader;
-import org.hoi.system.HoiMap;
-import org.hoi.various.Stringx;
+import org.hoi.system.hoi.HoiList;
+import org.hoi.system.hoi.HoiLoader;
+import org.hoi.system.hoi.HoiMap;
+import org.hoi.various.StringUtils;
 import org.hoi.various.collection.readonly.ReadOnlyList;
 
 import java.awt.*;
@@ -51,7 +51,7 @@ public class Ideology extends HoiMap {
 
     @Override
     public String toString() {
-        return Stringx.toUpperCaseFirst(getName());
+        return StringUtils.toUpperCaseFirst(getName());
     }
 
     // STATIC

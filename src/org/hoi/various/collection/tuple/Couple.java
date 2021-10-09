@@ -1,4 +1,4 @@
-package org.hoi.various.collection;
+package org.hoi.various.collection.tuple;
 
 public class Couple<A,B> {
     protected A first;
@@ -15,6 +15,15 @@ public class Couple<A,B> {
 
     public B getLast() {
         return last;
+    }
+
+    public boolean isEmpty () {
+        return first == null && last == null;
+    }
+
+    // STATIC
+    public static <A,B> Couple<A,B> empty () {
+        return new Couple<>(null, null);
     }
 
     public static class Writeable<A,B> extends Couple<A,B> {

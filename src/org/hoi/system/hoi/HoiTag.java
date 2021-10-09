@@ -1,4 +1,4 @@
-package org.hoi.system;
+package org.hoi.system.hoi;
 
 import java.util.stream.IntStream;
 

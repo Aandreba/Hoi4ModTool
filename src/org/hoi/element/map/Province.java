@@ -1,9 +1,10 @@
 package org.hoi.element.map;
 
-import org.hoi.system.HoiLoader;
-import org.hoi.various.Imagex;
-import org.hoi.various.collection.Couple;
+import org.hoi.system.hoi.HoiLoader;
+import org.hoi.various.img.ImageUtils;
+import org.hoi.various.collection.tuple.Couple;
 import org.hoi.various.collection.readonly.ReadOnlyList;
+import org.hoi.various.img.Pixel;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -33,9 +34,9 @@ public abstract class Province {
         BufferedImage image = ImageIO.read(HoiLoader.getFile("map/provinces.bmp"));
         HashMap<Color, ArrayList<Point>> subimages = new HashMap<>();
 
-        for (Imagex.ImagePixel pixel: Imagex.collection(image)) {
+        for (Pixel.ImagePixel pixel: ImageUtils.collection(image)) {
             ArrayList<Point> list = subimages.computeIfAbsent(pixel.getColor(), x -> new ArrayList<>());
-            list.add(pixel.getPoint());
+            list.add(pixel.getInitialPoint());
         }
 
         // PROVINCE INFO
@@ -60,8 +61,8 @@ public abstract class Province {
             if (pixels == null) {
                 provinces.add(new Static(id, color, type, coastal, terrain, new Couple<>(null, null)));
             } else {
-                Stream<Imagex.ImagePixel> subimage = pixels.stream().map(x -> new Imagex.ImagePixel(image, x));
-                provinces.add(new Static(id, color, type, coastal, terrain, Imagex.fromStream(subimage)));
+                Stream<Pixel.ImagePixel> subimage = pixels.stream().map(x -> new Pixel.ImagePixel(image, x));
+                provinces.add(new Static(id, color, type, coastal, terrain, ImageUtils.fromStream(subimage)));
             }
         }
 

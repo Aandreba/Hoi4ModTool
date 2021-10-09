@@ -2,20 +2,21 @@ package org.hoi.element.history;
 
 import org.hoi.element.common.Idea;
 import org.hoi.element.common.Ideology;
-import org.hoi.system.HoiList;
-import org.hoi.system.HoiLoader;
-import org.hoi.system.HoiMap;
-import org.hoi.system.HoiTag;
-import org.hoi.various.collection.MappedList;
+import org.hoi.various.img.TGA;
+import org.hoi.system.hoi.HoiList;
+import org.hoi.system.hoi.HoiLoader;
+import org.hoi.system.hoi.HoiMap;
+import org.hoi.various.collection.map.MappedList;
 import org.hoi.various.collection.concat.ConcatList;
 import org.hoi.various.collection.readonly.ReadOnlyList;
+import org.hoi.various.collection.readonly.ReadOnlyMap;
 import org.hoi.various.map.MappedMap;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.util.*;
@@ -27,32 +28,14 @@ public class Country extends HoiMap {
     private String tag;
     private Color color;
     private String culture;
+    private Flag flag;
 
-    public Country (String tag, Color color, String culture) {
-        this.tag = tag;
-        this.color = color;
-        this.culture = culture;
-    }
-
-    public Country (HoiMap other, String tag, Color color, String culture) {
-        super(other);
-        this.tag = tag;
-        this.color = color;
-        this.culture = culture;
-    }
-
-    public Country (File file, String tag, Color color, String culture) throws IOException {
+    public Country (File file, String tag, Color color, String culture, File dir) throws IOException {
         super(file);
         this.tag = tag;
         this.color = color;
         this.culture = culture;
-    }
-
-    public Country (Reader reader, String tag, Color color, String culture) throws IOException {
-        super(reader);
-        this.tag = tag;
-        this.color = color;
-        this.culture = culture;
+        this.flag = new Flag(dir);
     }
 
     // GETTERS
@@ -66,6 +49,10 @@ public class Country extends HoiMap {
 
     public String getCulture () {
         return culture;
+    }
+
+    public Flag getFlag () {
+        return flag;
     }
 
     final public int getCapital () {
@@ -189,6 +176,11 @@ public class Country extends HoiMap {
         };
     }
 
+    final public BufferedImage getCurrentFlag () {
+        BufferedImage flag = this.flag.getOfIdeology(getRulingParty());
+        return flag == null ? this.flag.getDefault() : flag;
+    }
+
     @Override
     public String toString() {
         return tag;
@@ -201,6 +193,8 @@ public class Country extends HoiMap {
 
     public static void loadDefaults () throws IOException {
         File common = HoiLoader.getFile("common");
+        File gfx = HoiLoader.getFile("gfx/flags");
+
         File[] files = HoiLoader.getFile("history/countries").listFiles();
         File countryTag = new File(common, "country_tags/00_countries.txt");
 
@@ -216,25 +210,66 @@ public class Country extends HoiMap {
         ArrayList<Country> list = new ArrayList<>();
         for (String row : rows) {
             String tag = row.substring(0, 3);
-            String commonPath = row.split("\\s*\\=\\s*")[1];
+            String commonPath = row.split("\\s*\\=\\s*")[1].split("#")[0];
+            while (commonPath.charAt(commonPath.length() - 1) <= 32) {
+                commonPath = commonPath.substring(0, commonPath.length() - 1);
+            }
 
-            commonPath = commonPath.substring(1, commonPath.length() - 2);
-
+            commonPath = commonPath.substring(1, commonPath.length() - 1);
             File historyFile = Arrays.stream(files).filter(x -> x.getName().startsWith(tag)).findFirst().get();
             HoiMap commonContents = new HoiMap(new File(common, commonPath));
 
             String culture = commonContents.getFirstString("graphical_culture");
             culture = culture.substring(0, culture.length() - 4);
 
-            list.add(new Country(historyFile, tag, commonContents.getFirstColor("color"), culture));
+            list.add(new Country(historyFile, tag, commonContents.getFirstColor("color"), culture, gfx));
         }
 
         DEFAULTS = new ReadOnlyList<>(list);
     }
 
     public class Flag {
-        public Flag () {
+        final public Country parent;
 
+        private BufferedImage defaultFlag;
+        private Map<String, BufferedImage> byIdeology;
+
+        public Flag (File dir) {
+            this.parent = Country.this;
+
+            try {
+                defaultFlag = TGA.read(new File(dir, getTag() + ".tga").toPath());
+            } catch (Exception e) {
+                defaultFlag = null;
+            }
+
+            String match = getTag()+"_";
+            File[] files = dir.listFiles(x -> x.getName().startsWith(match));
+
+            HashMap<String, BufferedImage> byIdeology = new HashMap<>();
+            for (File file: files) {
+                String name = file.getName();
+
+                String ideology = name.substring(match.length(), name.length() - 4);
+                try {
+                    BufferedImage image = TGA.read(file.toPath());
+                    byIdeology.put(ideology, image);
+                } catch (Exception ignore) {}
+            }
+
+            this.byIdeology = new ReadOnlyMap<>(byIdeology);
+        }
+
+        public BufferedImage getDefault () {
+            return defaultFlag;
+        }
+
+        public BufferedImage getOfIdeology (String ideology) {
+            return byIdeology.get(ideology);
+        }
+
+        public BufferedImage getOfIdeology (Ideology ideology) {
+            return getOfIdeology(ideology.getName());
         }
     }
 }

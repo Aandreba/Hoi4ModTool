@@ -1,4 +1,4 @@
-package org.hoi.img;
+package org.hoi.various.img;
 
 import javax.swing.*;
 import java.awt.*;

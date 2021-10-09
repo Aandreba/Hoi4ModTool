@@ -1,7 +1,6 @@
 package org.hoi.system.effects.types;
 
-import org.hoi.system.HoiList;
-import org.hoi.system.HoiLoader;
+import org.hoi.system.hoi.HoiLoader;
 import org.hoi.various.collection.readonly.ReadOnlyList;
 import org.hoi.system.effects.Scope;
 import org.hoi.system.effects.Target;

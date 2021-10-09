@@ -1,10 +1,6 @@
-package org.hoi.system;
+package org.hoi.system.hoi;
 
-import org.hoi.various.collection.MappedList;
-
-import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.List;
 
 public class HoiList extends ArrayList<Object> {
     public HoiList () {

@@ -1,11 +1,9 @@
 package org.hoi.element.common;
 
-import org.hoi.system.HoiList;
-import org.hoi.system.HoiLoader;
-import org.hoi.system.HoiMap;
-import org.hoi.system.effects.types.Modifier;
-import org.hoi.various.Stringx;
-import org.hoi.various.collection.MappedList;
+import org.hoi.system.hoi.HoiList;
+import org.hoi.system.hoi.HoiLoader;
+import org.hoi.system.hoi.HoiMap;
+import org.hoi.various.StringUtils;
 import org.hoi.various.collection.readonly.ReadOnlyList;
 
 import java.io.File;
@@ -60,7 +58,7 @@ public class Idea extends HoiMap {
 
     @Override
     public String toString() {
-        return Stringx.toUpperCaseWords(getName(), "_", " ");
+        return StringUtils.toUpperCaseWords(getName(), "_", " ");
     }
 
     // STATIC
@@ -83,6 +81,10 @@ public class Idea extends HoiMap {
             for (Map.Entry<String, Object> entry: map) {
                 String category = entry.getKey();
                 if (entry.getValue() instanceof HoiList && ((HoiList) entry.getValue()).size() == 0) {
+                    continue;
+                }
+
+                if (entry.getValue() instanceof HoiList) {
                     continue;
                 }
 

@@ -1,8 +1,8 @@
 package org.hoi.element.common;
 
-import org.hoi.system.HoiLoader;
-import org.hoi.system.HoiMap;
-import org.hoi.various.Stringx;
+import org.hoi.system.hoi.HoiLoader;
+import org.hoi.system.hoi.HoiMap;
+import org.hoi.various.StringUtils;
 import org.hoi.various.collection.readonly.ReadOnlyList;
 
 import java.io.File;
@@ -52,7 +52,7 @@ public class Autonomy extends HoiMap {
     @Override
     public String toString() {
         return "Autonomy{" +
-                "id=" + Stringx.toUpperCaseWords(getId().substring(9), "_", " ") + ", " +
+                "id=" + StringUtils.toUpperCaseWords(getId().substring(9), "_", " ") + ", " +
                 "default=" + isDefault() + ", " +
                 "is_puppet=" + isPuppet() + ", " +
                 "use_overlord_color=" + useOverlordColor() + ", " +

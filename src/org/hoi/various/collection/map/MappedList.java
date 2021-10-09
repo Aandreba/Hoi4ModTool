@@ -1,4 +1,6 @@
-package org.hoi.various.collection;
+package org.hoi.various.collection.map;
+
+import org.hoi.various.collection.WrappedArray;
 
 import java.util.AbstractList;
 import java.util.Iterator;

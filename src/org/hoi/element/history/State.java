@@ -1,13 +1,13 @@
 package org.hoi.element.history;
 
 import org.hoi.element.map.Province;
-import org.hoi.system.HoiList;
-import org.hoi.system.HoiLoader;
-import org.hoi.system.HoiMap;
-import org.hoi.system.HoiTag;
-import org.hoi.various.collection.MappedList;
+import org.hoi.system.hoi.HoiList;
+import org.hoi.system.hoi.HoiLoader;
+import org.hoi.system.hoi.HoiMap;
+import org.hoi.system.hoi.HoiTag;
+import org.hoi.various.ListUtils;
+import org.hoi.various.collection.map.MappedList;
 import org.hoi.various.collection.readonly.ReadOnlyList;
-import org.hoi.various.collection.readonly.ReadOnlyMap;
 
 import java.awt.*;
 import java.io.File;
@@ -36,6 +36,10 @@ public class State extends HoiMap {
         return this.getFirstInteger("id");
     }
 
+    final public String getName () {
+        return this.getFirstString("name");
+    }
+
     final public int getManpower () {
         return this.getFirstInteger("manpower");
     }
@@ -58,14 +62,24 @@ public class State extends HoiMap {
     }
 
     final public List<Integer> getProvinces () {
-        return this.getAs("provinces");
+        HoiList list = this.getFirstAs(HoiList.class, "provinces");
+        if (list == null) {
+            return ListUtils.empty();
+        }
+        return new MappedList<>(list) {
+            @Override
+            protected Integer map (Object input) {
+                return ((Number) input).intValue();
+            }
+        };
     }
 
-    final public List<Province> getProvinces (Map<Integer, Province> provinces) {
+    final public List<Province> getProvinces (Collection<Province> options) {
         return new MappedList<>(this.get("provinces")) {
             @Override
             protected Province map (Object input) {
-                return provinces.get(input);
+                int i = ((Number) input).intValue();
+                return options.stream().filter(x -> x.getId() == i).findFirst().orElse(null);
             }
         };
     }
@@ -76,14 +90,7 @@ public class State extends HoiMap {
 
     @Override
     public String toString() {
-        return "State{" +
-                "id=" + getId() + ", " +
-                "manpower=" + getManpower() + ", " +
-                "buildings_max_level_factor=" + getBuildingsMaxLevelFactor() + ", " +
-                "impassable=" + isImpassable() + ", " +
-                "provinces=" + getProvinces() + ", " +
-                "history=" + getHistory() +
-                "}";
+        return Integer.toString(getId());
     }
 
     // STATIC
@@ -117,7 +124,7 @@ public class State extends HoiMap {
         }
 
         final public String getOwner () {
-            return this.getFirstAs(HoiTag.class, "owner").toString();
+            return this.getFirstString("owner");
         }
 
         final public Country getOwner (Collection<Country> options) {
@@ -227,6 +234,10 @@ public class State extends HoiMap {
         }
 
         // STATIC
+        public static ReadOnlyList<Category> getDefaults () {
+            return DEFAULTS;
+        }
+
         public static void loadDefaults () throws IOException {
             File dir = HoiLoader.getFile("common/state_category");
             File[] files = dir.listFiles();

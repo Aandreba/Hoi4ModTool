@@ -1,4 +1,4 @@
-package org.hoi.img;
+package org.hoi.various.img;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
